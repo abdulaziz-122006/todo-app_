@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
+import tempfile
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -79,7 +81,7 @@ CSRF_TRUSTED_ORIGINS = [
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
 if os.environ.get('VERCEL') or not os.access(BASE_DIR, os.W_OK):
-    db_path = Path('/tmp/db.sqlite3')
+    db_path = Path(tempfile.gettempdir()) / 'db.sqlite3'
 else:
     db_path = BASE_DIR / 'db.sqlite3'
 

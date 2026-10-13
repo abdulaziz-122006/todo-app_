@@ -9,8 +9,8 @@ env/
 ENV/
 
 # Database
-db.sqlite3
-*.sqlite3
+# db.sqlite3
+# *.sqlite3
 
 # Environment variables
 .env

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mening Vazifalarim | To-Do List</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen py-12 px-4 font-sans">
+
+    <div class="max-w-md mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        
+        <!-- Sarlavha -->
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold tracking-wide">📌 Mening Vazifalarim</h1>
+                <p class="text-blue-100 text-xs mt-1">Foydalanuvchi: <span class="font-semibold text-white">@{{ request.user.username }}</span></p>
+            </div>
+            <a href="{% url 'logout' %}" class="text-xs bg-white/20 hover:bg-white/30 text-white font-medium px-3 py-1.5 rounded-lg transition backdrop-blur-sm">
+                Chiqish 🚪
+            </a>
+        </div>
+
+        <div class="p-6">
+            <!-- Yangi vazifa qo'shish -->
+            <form action="{% url 'add_task' %}" method="POST" class="space-y-3 mb-6">
+                {% csrf_token %}
+                <div>
+                    <input type="text" name="title" placeholder="Yangi vazifa nomini yozing..." required 
+                           class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                </div>
+                
+                <div class="flex gap-2">
+                    <select name="priority" class="flex-1 px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="Past">🟢 Past muhimlik</option>
+                        <option value="O'rta" selected>🟡 O'rta muhimlik</option>
+                        <option value="Yuqori">🔴 Yuqori muhimlik</option>
+                    </select>
+
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-xl transition text-sm shadow-sm">
+                        Qo'shish
+                    </button>
+                </div>
+            </form>
+
+            <hr class="border-slate-100 mb-6">
+
+            <!-- Vazifalar ro'yxati -->
+            <div class="space-y-3">
+                {% for task in tasks %}
+                <div class="p-4 rounded-xl border border-slate-100 transition {% if task.completed %}bg-slate-50 opacity-80{% else %}bg-white shadow-xs{% endif %}">
+                    
+                    <div class="flex items-start justify-between gap-3">
+                        <!-- Chap qism: Tick tugmasi va Matn -->
+                        <div class="flex items-start gap-3 overflow-hidden">
+                            <!-- Tick (Belgilash) tugmasi -->
+                            <a href="{% url 'toggle_task' task.id %}" class="mt-0.5 w-6 h-6 rounded-lg border flex items-center justify-center transition flex-shrink-0 {% if task.completed %}bg-emerald-500 border-emerald-500 text-white font-bold{% else %}border-slate-300 hover:border-blue-500{% endif %}">
+                                {% if task.completed %}✓{% endif %}
+                            </a>
+                            
+                            <div class="min-w-0">
+                                <!-- Vazifa nomi (Bajarilgan bo'lsa ustidan chiziladi) -->
+                                <p class="font-medium text-sm {% if task.completed %}line-through text-slate-400{% else %}text-slate-700{% endif %}">
+                                    {{ task.title }}
+                                </p>
+                                
+                                <!-- Muhimlik belgisi -->
+                                <span class="inline-block text-[11px] font-medium px-2 py-0.5 rounded-md mt-1
+                                    {% if task.priority == 'Yuqori' %}bg-red-50 text-red-600 border border-red-100
+                                    {% elif task.priority == 'O\'rta' %}bg-amber-50 text-amber-600 border border-amber-100
+                                    {% else %}bg-emerald-50 text-emerald-600 border border-emerald-100{% endif %}">
+                                    {{ task.priority }}
+                                </span>
+
+                                <!-- Tarix va vaqt ma'lumotlari -->
+                                <div class="text-[11px] text-slate-400 mt-2 space-y-0.5">
+                                    <p>📅 Yaratildi: {{ task.created_at|date:"d.m.Y H:i" }}</p>
+                                    {% if task.completed and task.completed_at %}
+                                    <p class="text-emerald-600 font-medium">✅ Bajarildi: {{ task.completed_at|date:"d.m.Y H:i" }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- O'ng qism: O'chirish tugmasi -->
+                        <a href="{% url 'delete_task' task.id %}" class="text-slate-300 hover:text-rose-600 p-1.5 rounded-lg transition hover:bg-rose-50 flex-shrink-0" title="O'chirish">
+                            🗑️
+                        </a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-10">
+                    <p class="text-3xl mb-2">📋</p>
+                    <p class="text-slate-400 text-sm">Hozircha vazifalar yo'q.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kirish | To-Do</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4 font-sans">
+
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        
+        <!-- Sarlavha -->
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white text-center">
+            <h1 class="text-2xl font-bold tracking-wide">🔐 Hisobga kirish</h1>
+            <p class="text-blue-100 text-sm mt-1">Vazifalaringizni ko'rish uchun profilingizga kiring</p>
+        </div>
+
+        <div class="p-6 sm:p-8">
+            {% if messages %}
+                <div class="space-y-2 mb-4">
+                    {% for message in messages %}
+                        <div class="p-3 text-sm rounded-xl {% if message.tags == 'error' %}bg-rose-50 text-rose-700 border border-rose-200{% else %}bg-emerald-50 text-emerald-700 border border-emerald-200{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form action="{% url 'login' %}" method="POST" class="space-y-4">
+                {% csrf_token %}
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1" for="username">Foydalanuvchi nomi (Username)</label>
+                    <input type="text" id="username" name="username" required
+                           class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="Username kiriting">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1" for="password">Parol</label>
+                    <input type="password" id="password" name="password" required
+                           class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="Parolingiz">
+                </div>
+
+                <div class="flex items-center gap-2 pt-1">
+                    <input type="checkbox" id="remember_me" name="remember_me" checked
+                           class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                    <label for="remember_me" class="text-xs text-slate-600 cursor-pointer select-none">Meni eslab qolish (30 kun)</label>
+                </div>
+
+                <button type="submit" 
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition text-sm shadow-sm mt-2">
+                    Kirish
+                </button>
+            </form>
+
+            <div class="mt-6 text-center text-xs text-slate-500">
+                Profilingiz yo'qmi? 
+                <a href="{% url 'register' %}" class="text-blue-600 font-semibold hover:underline">Ro'yxatdan o'tish</a>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

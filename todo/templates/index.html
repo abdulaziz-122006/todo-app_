@@ -27,6 +27,7 @@
 
         /* DARK THEME (Matching Right Side of Screenshot) */
         [data-theme="dark"] {
+            color-scheme: dark;
             --bg-page: #080c14;
             --bg-gradient: radial-gradient(circle at 50% 0%, #111827 0%, #080c14 70%, #030712 100%);
             --glass-bg: rgba(22, 27, 38, 0.62);
@@ -52,6 +53,7 @@
 
         /* LIGHT THEME (Matching Left Side of Screenshot) */
         [data-theme="light"] {
+            color-scheme: light;
             --bg-page: #e8ecf4;
             --bg-gradient: radial-gradient(circle at 50% 0%, #f4f6fa 0%, #e8edf5 50%, #dfe5ef 100%);
             --glass-bg: rgba(255, 255, 255, 0.58);
@@ -378,6 +380,28 @@
         .glass-input:focus {
             border-color: var(--accent-ring); box-shadow: 0 0 0 3px var(--accent-bg);
         }
+        input[type="datetime-local"].glass-input {
+            cursor: pointer;
+        }
+        [data-theme="dark"] input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            opacity: 0.85;
+            cursor: pointer;
+        }
+        [data-theme="light"] input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+            filter: none;
+            opacity: 0.75;
+            cursor: pointer;
+        }
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+        .chip-btn.active-pulse {
+            border-color: var(--accent-ring);
+            background: var(--accent-bg);
+            color: var(--accent-ring);
+            transform: scale(1.05);
+        }
         .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .quick-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
         .chip-btn {
@@ -643,8 +667,11 @@
                         </select>
                     </div>
                     <div>
-                        <label class="form-label" for="due-date-input">⏰ Bajarish muddati</label>
-                        <input type="datetime-local" name="due_date" id="due-date-input" class="glass-input">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <label class="form-label" for="due-date-input" style="margin-bottom:0;">⏰ Bajarish muddati</label>
+                            <span id="due-date-preview" style="display:none; font-size:11px; color:var(--accent-ring); font-weight:700;"></span>
+                        </div>
+                        <input type="datetime-local" name="due_date" id="due-date-input" class="glass-input" title="Bajarish muddatini tanlang">
                     </div>
                 </div>
 
@@ -743,13 +770,139 @@
     </div>
 
     {{ tasks_data|json_script:"scheduled-tasks-data" }}
-    <script src="{% static 'todo/js/app.js' %}"></script>
     <script>
         // ==========================================
-        // MINIMAL GLASSMORPHISM UI SCRIPTS
+        // 1. DATA VA HOLATNI BOSHQARISH
         // ==========================================
+        const tasksDataEl = document.getElementById('scheduled-tasks-data');
+        const scheduledTasks = tasksDataEl ? JSON.parse(tasksDataEl.textContent || '[]') : [];
 
-        // 1. THEME SWITCHER (Light Mode <-> Dark Mode)
+        const alertedTaskIds = new Set();
+        scheduledTasks.forEach(function (t) {
+            if (t.notified) {
+                alertedTaskIds.add(t.id);
+            }
+        });
+
+        // ==========================================
+        // 2. JONLI SOAT (LIVE CLOCK)
+        // ==========================================
+        function updateLiveClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const clockEl = document.getElementById('live-clock');
+            if (clockEl) {
+                clockEl.textContent = `${hours}:${minutes}:${seconds}`;
+            }
+        }
+        setInterval(updateLiveClock, 1000);
+        updateLiveClock();
+
+        // ==========================================
+        // 3. TEZKOR VAQT QO'SHISH FUNKSIYALARI
+        // ==========================================
+        function formatDateTimeLocal(date) {
+            const pad = (n) => String(n).padStart(2, '0');
+            const yyyy = date.getFullYear();
+            const mm = pad(date.getMonth() + 1);
+            const dd = pad(date.getDate());
+            const hh = pad(date.getHours());
+            const min = pad(date.getMinutes());
+            return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+        }
+
+        function updateDueDatePreview(date) {
+            const previewEl = document.getElementById('due-date-preview');
+            if (!previewEl) return;
+            if (!date) {
+                previewEl.textContent = '';
+                previewEl.style.display = 'none';
+                return;
+            }
+            const pad = (n) => String(n).padStart(2, '0');
+            const dd = pad(date.getDate());
+            const mm = pad(date.getMonth() + 1);
+            const hh = pad(date.getHours());
+            const min = pad(date.getMinutes());
+            
+            const now = new Date();
+            const isToday = now.toDateString() === date.toDateString();
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const isTomorrow = tomorrow.toDateString() === date.toDateString();
+            
+            let dayText = `${dd}.${mm}`;
+            if (isToday) dayText = 'Bugun';
+            else if (isTomorrow) dayText = 'Ertaga';
+
+            previewEl.textContent = `✓ ${dayText} ${hh}:${min}`;
+            previewEl.style.display = 'inline-block';
+        }
+
+        function highlightDueInput() {
+            const input = document.getElementById('due-date-input');
+            if (!input) return;
+            input.style.borderColor = 'var(--accent-ring)';
+            input.style.boxShadow = '0 0 0 3px var(--accent-bg)';
+            setTimeout(() => {
+                input.style.borderColor = '';
+                input.style.boxShadow = '';
+            }, 600);
+        }
+
+        function addMinutes(min) {
+            const input = document.getElementById('due-date-input');
+            if (!input) return;
+            let base = new Date();
+            if (input.value) {
+                const existing = new Date(input.value);
+                if (!isNaN(existing.getTime()) && existing > new Date()) {
+                    base = existing;
+                }
+            }
+            const target = new Date(base.getTime() + min * 60 * 1000);
+            input.value = formatDateTimeLocal(target);
+            updateDueDatePreview(target);
+            highlightDueInput();
+        }
+
+        function setTodayEvening() {
+            const input = document.getElementById('due-date-input');
+            if (!input) return;
+            const target = new Date();
+            target.setHours(18, 0, 0, 0);
+            if (target < new Date()) {
+                target.setDate(target.getDate() + 1);
+            }
+            input.value = formatDateTimeLocal(target);
+            updateDueDatePreview(target);
+            highlightDueInput();
+        }
+
+        function setTomorrowMorning() {
+            const input = document.getElementById('due-date-input');
+            if (!input) return;
+            const target = new Date();
+            target.setDate(target.getDate() + 1);
+            target.setHours(9, 0, 0, 0);
+            input.value = formatDateTimeLocal(target);
+            updateDueDatePreview(target);
+            highlightDueInput();
+        }
+
+        function clearDueDate() {
+            const input = document.getElementById('due-date-input');
+            if (!input) return;
+            input.value = '';
+            updateDueDatePreview(null);
+            highlightDueInput();
+        }
+
+        // ==========================================
+        // 4. THEME SWITCHER (Light <-> Dark)
+        // ==========================================
         function initTheme() {
             const savedTheme = localStorage.getItem('todo_theme') || 'dark';
             setThemeMode(savedTheme);
@@ -759,7 +912,6 @@
             document.documentElement.setAttribute('data-theme', mode);
             localStorage.setItem('todo_theme', mode);
 
-            // Update segmented switch tabs
             const lightTab = document.getElementById('mode-tab-light');
             const darkTab = document.getElementById('mode-tab-dark');
             if (lightTab && darkTab) {
@@ -772,7 +924,6 @@
                 }
             }
 
-            // Update top bar icon
             const iconEl = document.getElementById('theme-icon');
             if (iconEl) {
                 iconEl.textContent = mode === 'dark' ? '☀️' : '🌙';
@@ -785,13 +936,17 @@
             setThemeMode(next);
         }
 
-        // 2. PROGRESS RING CALCULATION
+        // ==========================================
+        // 5. PROGRESS RING
+        // ==========================================
         function updateProgressMeter() {
             const allTasks = document.querySelectorAll('.task-card');
             const total = allTasks.length;
             if (total === 0) {
-                document.getElementById('progress-percent-text').textContent = '100%';
-                document.getElementById('progress-stat-label').textContent = 'Bo\'sh';
+                const percentEl = document.getElementById('progress-percent-text');
+                const labelEl = document.getElementById('progress-stat-label');
+                if (percentEl) percentEl.textContent = '100%';
+                if (labelEl) labelEl.textContent = 'Bo\'sh';
                 const circleBar = document.getElementById('progress-circle-bar');
                 if (circleBar) circleBar.style.strokeDashoffset = '0';
                 return;
@@ -805,8 +960,10 @@
             });
 
             const percent = Math.round((completedCount / total) * 100);
-            document.getElementById('progress-percent-text').textContent = percent + '%';
-            document.getElementById('progress-stat-label').textContent = `${completedCount}/${total} Bajarildi`;
+            const percentEl = document.getElementById('progress-percent-text');
+            const labelEl = document.getElementById('progress-stat-label');
+            if (percentEl) percentEl.textContent = percent + '%';
+            if (labelEl) labelEl.textContent = `${completedCount}/${total} Bajarildi`;
 
             const circumference = 226;
             const offset = circumference - (percent / 100) * circumference;
@@ -816,7 +973,9 @@
             }
         }
 
-        // 3. TASK SEARCH FILTER
+        // ==========================================
+        // 6. TASK SEARCH FILTER
+        // ==========================================
         function handleTaskSearch(query) {
             const q = query.toLowerCase().trim();
             document.querySelectorAll('.task-card').forEach(card => {
@@ -829,25 +988,24 @@
             });
         }
 
-        // 4. TOGGLE NEW TASK FORM
+        // ==========================================
+        // 7. TOGGLE TASK FORM DRAWER
+        // ==========================================
         function toggleTaskForm() {
             const formCard = document.getElementById('task-form-section');
             if (formCard) {
                 formCard.classList.toggle('open');
                 if (formCard.classList.contains('open')) {
                     formCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    document.getElementById('task-title-input').focus();
+                    const titleInput = document.getElementById('task-title-input');
+                    if (titleInput) titleInput.focus();
                 }
             }
         }
 
-        // INITIALIZE ALL
-        window.addEventListener('DOMContentLoaded', () => {
-            initTheme();
-            updateProgressMeter();
-        });
-
-        // OVERRIDE filterTasks FOR SMOOTH TABS
+        // ==========================================
+        // 8. TABS FILTRI
+        // ==========================================
         function filterTasks(type) {
             document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
             const activeTab = document.getElementById('tab-' + type);
@@ -864,6 +1022,296 @@
                 card.style.display = show ? '' : 'none';
             });
         }
+
+        // ==========================================
+        // 9. AUDIO CHIME (Web Audio API)
+        // ==========================================
+        function playChimeSound() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                const now = ctx.currentTime;
+
+                const osc1 = ctx.createOscillator();
+                const gain1 = ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(659.25, now);
+                osc1.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+                gain1.gain.setValueAtTime(0.35, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+                osc1.connect(gain1);
+                gain1.connect(ctx.destination);
+                osc1.start(now);
+                osc1.stop(now + 0.9);
+
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.type = 'triangle';
+                osc2.frequency.setValueAtTime(880, now + 0.2);
+                osc2.frequency.exponentialRampToValueAtTime(1318.5, now + 0.4);
+                gain2.gain.setValueAtTime(0.3, now + 0.2);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                osc2.start(now + 0.2);
+                osc2.stop(now + 1.4);
+            } catch (err) {
+                console.warn('Audio play restricted:', err);
+            }
+        }
+
+        // ==========================================
+        // 10. TOAST VA PUSH BILDIRISHNOMALAR
+        // ==========================================
+        function showInAppToast(task) {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = 'toast-popup';
+            toast.innerHTML = `
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <span style="font-size:20px;">⏰</span>
+                        <div>
+                            <h4 style="font-size:13px;font-weight:700;color:var(--text-primary);">Vazifa vaqti yetdi!</h4>
+                            <p style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${task.title}</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="this.closest('.toast-popup').remove()" style="background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:14px;">✕</button>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding-top:8px;border-top:1px solid var(--glass-border);">
+                    <a href="/toggle/${task.id}/" style="flex:1;text-align:center;background:#10b981;color:#fff;font-weight:600;font-size:11.5px;padding:6px 12px;border-radius:10px;text-decoration:none;">
+                        ✓ Bajarildi
+                    </a>
+                    <button type="button" data-task-id="${task.id}" data-minutes="15" onclick="handleSnoozeClick(this); this.closest('.toast-popup').remove();" style="background:var(--glass-bg-subtle);border:1px solid var(--glass-border);color:var(--text-primary);font-size:11.5px;padding:6px 10px;border-radius:10px;cursor:pointer;">
+                        ⏱️ +15 daqiqa
+                    </button>
+                </div>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(function () {
+                if (toast && toast.parentNode) {
+                    toast.style.opacity = '0';
+                    toast.style.transition = 'opacity 0.5s';
+                    setTimeout(function () {
+                        toast.remove();
+                    }, 500);
+                }
+            }, 15000);
+        }
+
+        function triggerPushNotification(task) {
+            playChimeSound();
+            showInAppToast(task);
+
+            if ("Notification" in window && Notification.permission === "granted") {
+                const title = "⏰ Vazifa vaqti yetdi!";
+                const options = {
+                    body: `"${task.title}" vazifasini bajarish vaqti bo'ldi.`,
+                    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⏰</text></svg>',
+                    badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📌</text></svg>',
+                    tag: `task-${task.id}`,
+                    renotify: true,
+                    requireInteraction: true
+                };
+
+                try {
+                    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                        navigator.serviceWorker.ready.then(function (reg) {
+                            reg.showNotification(title, options);
+                        });
+                    } else {
+                        const notif = new Notification(title, options);
+                        notif.onclick = function () {
+                            window.focus();
+                            this.close();
+                        };
+                    }
+                } catch (e) {
+                    new Notification(title, options);
+                }
+            }
+
+            markTaskAsNotified(task.id);
+        }
+
+        function markTaskAsNotified(taskId) {
+            const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+            const csrfToken = csrfInput ? csrfInput.value : '';
+            fetch(`/mark-notified/${taskId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json'
+                }
+            }).catch(function (err) {
+                console.error("Xatolik notified saqlashda:", err);
+            });
+        }
+
+        function handleSnoozeClick(btn) {
+            const taskId = btn.getAttribute('data-task-id');
+            const minutes = btn.getAttribute('data-minutes') || 15;
+            if (taskId) {
+                snoozeTask(taskId, minutes);
+            }
+        }
+
+        function snoozeTask(taskId, minutes) {
+            const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+            const csrfToken = csrfInput ? csrfInput.value : '';
+            const formData = new FormData();
+            formData.append('minutes', minutes);
+
+            fetch(`/snooze/${taskId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            })
+            .then(function (res) {
+                return res.json();
+            })
+            .then(function (data) {
+                if (data.status === 'ok') {
+                    window.location.reload();
+                }
+            })
+            .catch(function (err) {
+                console.error("Snooze xatosi:", err);
+            });
+        }
+
+        // ==========================================
+        // 11. DEADLINE TICKER & BADGES
+        // ==========================================
+        function checkTaskDeadlines() {
+            const nowSec = Math.floor(Date.now() / 1000);
+
+            scheduledTasks.forEach(function (task) {
+                if (task.dueEpochSec && nowSec >= task.dueEpochSec && !alertedTaskIds.has(task.id)) {
+                    alertedTaskIds.add(task.id);
+                    task.notified = true;
+                    triggerPushNotification(task);
+                }
+            });
+
+            updateAllBadges(nowSec);
+        }
+
+        function updateAllBadges(nowSec) {
+            document.querySelectorAll('.due-badge').forEach(function (badge) {
+                const epoch = parseInt(badge.getAttribute('data-due-epoch'), 10);
+                const isCompleted = badge.getAttribute('data-completed') === 'true';
+                if (!epoch || isCompleted) return;
+
+                const diffSec = epoch - nowSec;
+                const taskId = badge.id.replace('due-badge-', '');
+                const countdownEl = document.getElementById(`countdown-${taskId}`);
+
+                if (diffSec < 0) {
+                    badge.className = 'due-badge overdue';
+                    if (countdownEl) {
+                        const passedMin = Math.abs(Math.floor(diffSec / 60));
+                        countdownEl.textContent = passedMin > 60 ? `(${Math.floor(passedMin / 60)}s oldin)` : `(${passedMin} daq oldin)`;
+                    }
+                } else if (diffSec <= 15 * 60) {
+                    badge.className = 'due-badge soon';
+                    if (countdownEl) {
+                        const remMin = Math.ceil(diffSec / 60);
+                        countdownEl.textContent = `(${remMin} daq qoldi)`;
+                    }
+                } else {
+                    badge.className = 'due-badge';
+                    if (countdownEl) {
+                        const remMin = Math.ceil(diffSec / 60);
+                        if (remMin < 120) {
+                            countdownEl.textContent = `(${remMin} daq)`;
+                        } else {
+                            countdownEl.textContent = '';
+                        }
+                    }
+                }
+            });
+        }
+
+        setInterval(checkTaskDeadlines, 3000);
+
+        function pollServerForDueTasks() {
+            fetch('/api/due-tasks/')
+                .then(function (res) {
+                    return res.json();
+                })
+                .then(function (data) {
+                    if (data.tasks && data.tasks.length > 0) {
+                        data.tasks.forEach(function (task) {
+                            if (!alertedTaskIds.has(task.id)) {
+                                alertedTaskIds.add(task.id);
+                                triggerPushNotification(task);
+                            }
+                        });
+                    }
+                })
+                .catch(function (err) {
+                    console.debug("Server sync:", err);
+                });
+        }
+        setInterval(pollServerForDueTasks, 30000);
+
+        function enablePushNotifications() {
+            if (!("Notification" in window)) {
+                alert("Brauzeringizda bildirishnoma qo'llab-quvvatlanmaydi.");
+                return;
+            }
+
+            Notification.requestPermission().then(function (permission) {
+                if (permission === "granted") {
+                    playChimeSound();
+                    new Notification("✅ Ruxsat berildi!", {
+                        body: "Ajoyib! Endi vazifalaringiz vaqti kelganda sizga push bildirishnoma yuboriladi.",
+                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎉</text></svg>'
+                    });
+                }
+            });
+        }
+
+        // ==========================================
+        // 12. INITIALIZE ALL
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            updateProgressMeter();
+            checkTaskDeadlines();
+
+            const dueInput = document.getElementById('due-date-input');
+            if (dueInput) {
+                dueInput.addEventListener('click', function() {
+                    if (typeof this.showPicker === 'function') {
+                        try { this.showPicker(); } catch (e) {}
+                    }
+                });
+                dueInput.addEventListener('change', function() {
+                    if (this.value) {
+                        const dt = new Date(this.value);
+                        if (!isNaN(dt.getTime())) {
+                            updateDueDatePreview(dt);
+                        }
+                    } else {
+                        updateDueDatePreview(null);
+                    }
+                });
+            }
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js').catch(function (err) {
+                    console.log('SW registration note:', err);
+                });
+            }
+        });
     </script>
 </body>
 </html>

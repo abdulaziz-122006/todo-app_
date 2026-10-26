@@ -38,40 +38,51 @@ function formatDateTimeLocal(date) {
 }
 
 function addMinutes(min) {
-    const target = new Date(Date.now() + min * 60 * 1000);
     const input = document.getElementById('due-date-input');
-    if (input) {
-        input.value = formatDateTimeLocal(target);
+    if (!input) return;
+    let base = new Date();
+    if (input.value) {
+        const existing = new Date(input.value);
+        if (!isNaN(existing.getTime()) && existing > new Date()) {
+            base = existing;
+        }
     }
+    const target = new Date(base.getTime() + min * 60 * 1000);
+    input.value = formatDateTimeLocal(target);
+    if (typeof updateDueDatePreview === 'function') updateDueDatePreview(target);
+    if (typeof highlightDueInput === 'function') highlightDueInput();
 }
 
 function setTodayEvening() {
+    const input = document.getElementById('due-date-input');
+    if (!input) return;
     const target = new Date();
     target.setHours(18, 0, 0, 0);
     if (target < new Date()) {
         target.setDate(target.getDate() + 1);
     }
-    const input = document.getElementById('due-date-input');
-    if (input) {
-        input.value = formatDateTimeLocal(target);
-    }
+    input.value = formatDateTimeLocal(target);
+    if (typeof updateDueDatePreview === 'function') updateDueDatePreview(target);
+    if (typeof highlightDueInput === 'function') highlightDueInput();
 }
 
 function setTomorrowMorning() {
+    const input = document.getElementById('due-date-input');
+    if (!input) return;
     const target = new Date();
     target.setDate(target.getDate() + 1);
     target.setHours(9, 0, 0, 0);
-    const input = document.getElementById('due-date-input');
-    if (input) {
-        input.value = formatDateTimeLocal(target);
-    }
+    input.value = formatDateTimeLocal(target);
+    if (typeof updateDueDatePreview === 'function') updateDueDatePreview(target);
+    if (typeof highlightDueInput === 'function') highlightDueInput();
 }
 
 function clearDueDate() {
     const input = document.getElementById('due-date-input');
-    if (input) {
-        input.value = '';
-    }
+    if (!input) return;
+    input.value = '';
+    if (typeof updateDueDatePreview === 'function') updateDueDatePreview(null);
+    if (typeof highlightDueInput === 'function') highlightDueInput();
 }
 
 // 4. Audio Chime (Web Audio API orqali chiroyli qo'ng'iroq ovozi)

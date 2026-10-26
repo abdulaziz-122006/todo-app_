@@ -1,102 +1,869 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="uz">
+<html lang="uz" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mening Vazifalarim | To-Do List</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Todo app</title>
+    <meta name="description" content="Todo app — Vazifalaringizni oson boshqaring.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* ========================================================
+           MINIMAL GLASSMORPHISM DESIGN SYSTEM (Light & Dark)
+           ======================================================== */
+        :root {
+            --font-main: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --r-3xl: 28px;
+            --r-2xl: 24px;
+            --r-xl: 18px;
+            --r-lg: 14px;
+            --r-md: 10px;
+            --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* DARK THEME (Matching Right Side of Screenshot) */
+        [data-theme="dark"] {
+            --bg-page: #080c14;
+            --bg-gradient: radial-gradient(circle at 50% 0%, #111827 0%, #080c14 70%, #030712 100%);
+            --glass-bg: rgba(22, 27, 38, 0.62);
+            --glass-bg-hover: rgba(28, 34, 48, 0.72);
+            --glass-bg-subtle: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.11);
+            --glass-border-hover: rgba(255, 255, 255, 0.22);
+            --glass-border-highlight: rgba(255, 255, 255, 0.18);
+            --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+            --glass-shadow-hover: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-tertiary: #64748b;
+            --accent-glow: #38bdf8;
+            --accent-ring: #38bdf8;
+            --accent-bg: rgba(56, 189, 248, 0.15);
+            --input-bg: rgba(15, 20, 30, 0.65);
+            --leaf-color: #1e293b;
+            --orb-1: radial-gradient(circle, rgba(56, 189, 248, 0.18) 0%, transparent 70%);
+            --orb-2: radial-gradient(circle, rgba(99, 102, 241, 0.16) 0%, transparent 70%);
+            --orb-3: radial-gradient(circle, rgba(147, 51, 234, 0.12) 0%, transparent 70%);
+        }
+
+        /* LIGHT THEME (Matching Left Side of Screenshot) */
+        [data-theme="light"] {
+            --bg-page: #e8ecf4;
+            --bg-gradient: radial-gradient(circle at 50% 0%, #f4f6fa 0%, #e8edf5 50%, #dfe5ef 100%);
+            --glass-bg: rgba(255, 255, 255, 0.58);
+            --glass-bg-hover: rgba(255, 255, 255, 0.75);
+            --glass-bg-subtle: rgba(255, 255, 255, 0.35);
+            --glass-border: rgba(255, 255, 255, 0.85);
+            --glass-border-hover: rgba(255, 255, 255, 1);
+            --glass-border-highlight: rgba(255, 255, 255, 0.95);
+            --glass-shadow: 0 12px 35px rgba(100, 116, 139, 0.10), 0 2px 8px rgba(100, 116, 139, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+            --glass-shadow-hover: 0 18px 45px rgba(100, 116, 139, 0.15), inset 0 1px 1px rgba(255, 255, 255, 1);
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-tertiary: #94a3b8;
+            --accent-glow: #0284c7;
+            --accent-ring: #0284c7;
+            --accent-bg: rgba(2, 132, 199, 0.12);
+            --input-bg: rgba(255, 255, 255, 0.65);
+            --leaf-color: #8da48f;
+            --orb-1: radial-gradient(circle, rgba(186, 230, 253, 0.6) 0%, transparent 70%);
+            --orb-2: radial-gradient(circle, rgba(224, 231, 255, 0.55) 0%, transparent 70%);
+            --orb-3: radial-gradient(circle, rgba(254, 243, 199, 0.45) 0%, transparent 70%);
+        }
+
+        html { height: 100%; scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-main);
+            min-height: 100vh;
+            background: var(--bg-page);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            transition: background 0.4s ease, color 0.4s ease;
+            position: relative;
+        }
+
+        /* ===== BACKGROUND AMBIENCE ===== */
+        .ambient-bg {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+            background: var(--bg-gradient);
+            transition: background 0.4s ease;
+        }
+        .ambient-orb {
+            position: absolute; border-radius: 50%; filter: blur(80px);
+            opacity: 0.85; animation: ambientFloat 20s ease-in-out infinite alternate;
+        }
+        .orb-top-left { width: 500px; height: 500px; top: -150px; left: -100px; background: var(--orb-1); }
+        .orb-mid-right { width: 450px; height: 450px; top: 30%; right: -120px; background: var(--orb-2); animation-delay: -6s; }
+        .orb-bot-left { width: 400px; height: 400px; bottom: -80px; left: 15%; background: var(--orb-3); animation-delay: -12s; }
+
+        @keyframes ambientFloat {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, -25px) scale(1.05); }
+            100% { transform: translate(-20px, 25px) scale(0.97); }
+        }
+
+        /* BOTANICAL LEAF SILHOUETTE (Exact match to screenshot bottom corners) */
+        .botanical-leaf {
+            position: fixed; pointer-events: none; z-index: 0;
+            transition: opacity 0.5s ease, filter 0.5s ease;
+        }
+        .botanical-left {
+            bottom: -30px; left: -30px; width: 230px; height: 330px;
+            transform: rotate(-10deg);
+        }
+        .botanical-right {
+            bottom: -40px; right: -30px; width: 250px; height: 350px;
+            transform: scaleX(-1) rotate(-15deg);
+        }
+
+        /* In Light Mode: Left leaf is bright and visible like screenshot */
+        [data-theme="light"] .botanical-left {
+            opacity: 0.85;
+            filter: drop-shadow(0 12px 24px rgba(100, 116, 139, 0.15));
+        }
+        [data-theme="light"] .botanical-right {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* In Dark Mode: Right leaf is dark and visible like screenshot */
+        [data-theme="dark"] .botanical-left {
+            opacity: 0;
+            pointer-events: none;
+        }
+        [data-theme="dark"] .botanical-right {
+            opacity: 0.65;
+            filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.6));
+        }
+
+        /* PROMINENT THEME MODE SWITCHER BAR (Light <-> Dark matching screenshot) */
+        .theme-mode-segmented {
+            display: inline-flex;
+            align-items: center;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            border-radius: 30px;
+            padding: 4px;
+            box-shadow: var(--glass-shadow);
+            position: relative;
+            gap: 4px;
+            transition: var(--transition-smooth);
+        }
+        .mode-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 20px;
+            border-radius: 24px;
+            font-size: 13px;
+            font-weight: 700;
+            font-family: inherit;
+            border: none;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-secondary);
+            transition: var(--transition-smooth);
+        }
+        .mode-tab:hover {
+            color: var(--text-primary);
+        }
+        .mode-tab.active {
+            background: var(--text-primary);
+            color: var(--bg-page);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+        }
+        .mode-tab .mode-icon { font-size: 14px; }
+
+        /* ===== CONTAINER ===== */
+        .app-wrapper {
+            position: relative; z-index: 1;
+            max-width: 480px; margin: 0 auto;
+            padding: 36px 18px 90px;
+            min-height: 100vh;
+        }
+
+        /* ===== MINIMAL GLASS CARD BASE ===== */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(28px) saturate(180%);
+            -webkit-backdrop-filter: blur(28px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--r-3xl);
+            box-shadow: var(--glass-shadow);
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition-smooth);
+        }
+        .glass-card::before {
+            content: ''; position: absolute;
+            top: 0; left: 10%; right: 10%; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--glass-border-highlight), transparent);
+            pointer-events: none; z-index: 2;
+        }
+
+        /* ===== HEADER TITLE ===== */
+        .hero-banner {
+            text-align: center; margin-bottom: 20px;
+        }
+        .hero-title {
+            font-size: 26px; font-weight: 700; letter-spacing: -0.5px;
+            color: var(--text-primary); margin-bottom: 0;
+        }
+
+        /* ===== TOP APP BAR ===== */
+        .top-nav {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 18px; margin-bottom: 16px; border-radius: var(--r-2xl);
+        }
+        .user-tag {
+            display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600;
+        }
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: #10b981;
+            box-shadow: 0 0 8px #10b981;
+        }
+        .nav-actions { display: flex; align-items: center; gap: 8px; }
+        .btn-icon-glass {
+            width: 36px; height: 36px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--glass-bg-subtle);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary); cursor: pointer;
+            transition: var(--transition-smooth); text-decoration: none; font-size: 14px;
+        }
+        .btn-icon-glass:hover {
+            background: var(--glass-bg-hover); transform: translateY(-2px);
+            border-color: var(--glass-border-hover);
+        }
+        .btn-logout {
+            padding: 7px 14px; border-radius: 12px; font-size: 12px; font-weight: 600;
+            background: var(--glass-bg-subtle); border: 1px solid var(--glass-border);
+            color: var(--text-secondary); text-decoration: none; display: flex; align-items: center; gap: 5px;
+            transition: var(--transition-smooth);
+        }
+        .btn-logout:hover {
+            color: #ef4444; border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* ===== MIDDLE ROW: TODAY'S PLAN & BATTERY / PROGRESS ===== */
+        .widgets-grid {
+            display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; margin-bottom: 16px;
+        }
+
+        /* CARD A: TODAY'S PLAN */
+        .plan-card {
+            padding: 20px 18px; display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .plan-header {
+            display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+        }
+        .plan-title {
+            font-size: 14px; font-weight: 700; color: var(--text-primary);
+        }
+        .plan-add-btn {
+            width: 26px; height: 26px; border-radius: 50%;
+            background: var(--glass-bg-subtle); border: 1px solid var(--glass-border);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-primary); font-size: 16px; line-height: 1;
+            cursor: pointer; transition: var(--transition-smooth);
+        }
+        .plan-add-btn:hover {
+            background: var(--text-primary); color: var(--bg-page); transform: rotate(90deg) scale(1.1);
+        }
+        .plan-list {
+            list-style: none; display: flex; flex-direction: column; gap: 9px;
+        }
+        .plan-item {
+            display: flex; align-items: center; gap: 8px; font-size: 12.5px;
+            color: var(--text-secondary); font-weight: 500; cursor: pointer;
+            transition: color 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .plan-item:hover { color: var(--text-primary); }
+        .plan-bullet {
+            width: 5px; height: 5px; border-radius: 50%; background: var(--text-secondary); flex-shrink: 0;
+        }
+        .plan-item.done { text-decoration: line-through; opacity: 0.5; }
+        .plan-empty { font-size: 12px; color: var(--text-tertiary); font-style: italic; }
+
+        /* CARD B: CIRCULAR PROGRESS / BATTERY WIDGET */
+        .progress-card {
+            padding: 20px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center;
+        }
+        .circle-progress-wrap {
+            position: relative; width: 88px; height: 88px; margin-bottom: 8px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .circle-progress-svg {
+            width: 100%; height: 100%; transform: rotate(-90deg);
+        }
+        .circle-bg {
+            fill: none; stroke: var(--glass-border); stroke-width: 6;
+        }
+        .circle-bar {
+            fill: none; stroke: var(--accent-ring); stroke-width: 6; stroke-linecap: round;
+            stroke-dasharray: 226; stroke-dashoffset: 56; /* Default ~75% */
+            transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: drop-shadow(0 0 6px var(--accent-glow));
+        }
+        .progress-val {
+            position: absolute; font-size: 17px; font-weight: 700; color: var(--text-primary);
+        }
+        .progress-label {
+            font-size: 12px; font-weight: 600; color: var(--text-secondary);
+        }
+
+        /* ===== 5. SEARCH BAR ===== */
+        .search-wrap {
+            margin-bottom: 16px; position: relative;
+        }
+        .search-input {
+            width: 100%; padding: 15px 20px 15px 46px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--r-2xl);
+            box-shadow: var(--glass-shadow);
+            color: var(--text-primary); font-family: inherit; font-size: 13.5px; font-weight: 500;
+            outline: none; backdrop-filter: blur(28px);
+            transition: var(--transition-smooth);
+        }
+        .search-input::placeholder { color: var(--text-tertiary); }
+        .search-input:focus {
+            border-color: var(--accent-ring);
+            box-shadow: 0 0 0 3px var(--accent-bg), var(--glass-shadow);
+        }
+        .search-icon-svg {
+            position: absolute; left: 18px; top: 50%; transform: translateY(-50%);
+            width: 18px; height: 18px; stroke: var(--text-tertiary); fill: none; stroke-width: 2;
+            pointer-events: none;
+        }
+
+        /* ===== 7. TASK CREATION DRAWER / FORM ===== */
+        .task-form-card {
+            padding: 22px; margin-bottom: 20px;
+            display: none; /* Toggled via + button or always visible */
+            animation: formDrop 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        }
+        .task-form-card.open { display: block; }
+        @keyframes formDrop {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .form-title-row {
+            display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+        }
+        .form-section-title {
+            font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+        .form-field { margin-bottom: 14px; }
+        .form-label {
+            display: block; font-size: 11px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.6px; color: var(--text-tertiary); margin-bottom: 6px;
+        }
+        .glass-input {
+            width: 100%; padding: 12px 16px;
+            background: var(--input-bg); border: 1px solid var(--glass-border);
+            border-radius: var(--r-lg); color: var(--text-primary); font-family: inherit; font-size: 13.5px;
+            outline: none; transition: var(--transition-smooth);
+        }
+        .glass-input:focus {
+            border-color: var(--accent-ring); box-shadow: 0 0 0 3px var(--accent-bg);
+        }
+        .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .quick-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .chip-btn {
+            padding: 5px 11px; border-radius: 20px; font-size: 11px; font-weight: 600;
+            background: var(--glass-bg-subtle); border: 1px solid var(--glass-border);
+            color: var(--text-secondary); cursor: pointer; transition: var(--transition-smooth);
+        }
+        .chip-btn:hover {
+            background: var(--accent-bg); color: var(--accent-ring); border-color: var(--accent-ring);
+        }
+        .btn-submit-task {
+            width: 100%; padding: 14px; border-radius: var(--r-xl);
+            background: var(--text-primary); color: var(--bg-page);
+            font-size: 14px; font-weight: 700; font-family: inherit;
+            border: none; cursor: pointer; transition: var(--transition-smooth);
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            margin-top: 6px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+        .btn-submit-task:hover {
+            transform: translateY(-2px); opacity: 0.92;
+        }
+
+        /* ===== 8. FILTER TABS & TASK LIST ===== */
+        .filter-row {
+            display: flex; gap: 6px; padding: 5px; margin-bottom: 14px;
+            border-radius: 18px;
+        }
+        .filter-tab {
+            flex: 1; padding: 8px 6px; font-size: 11.5px; font-weight: 600; font-family: inherit;
+            border-radius: 12px; border: none; background: transparent; color: var(--text-tertiary);
+            cursor: pointer; transition: var(--transition-smooth); text-align: center;
+        }
+        .filter-tab.active {
+            background: var(--glass-bg-hover); color: var(--text-primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), inset 0 1px 0 var(--glass-border-highlight);
+        }
+
+        /* TASK CARD */
+        .task-card {
+            padding: 16px 18px; margin-bottom: 10px;
+            display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+            transition: var(--transition-smooth);
+        }
+        .task-card:hover {
+            transform: translateY(-2px); border-color: var(--glass-border-hover);
+        }
+        .task-card.completed { opacity: 0.55; }
+        .task-main {
+            display: flex; align-items: flex-start; gap: 12px; flex: 1; min-width: 0;
+        }
+        .task-checkbox {
+            width: 24px; height: 24px; border-radius: 8px; flex-shrink: 0; margin-top: 1px;
+            display: flex; align-items: center; justify-content: center;
+            border: 1.5px solid var(--glass-border); background: var(--glass-bg-subtle);
+            color: transparent; text-decoration: none; font-size: 12px; font-weight: 700;
+            transition: var(--transition-smooth);
+        }
+        .task-checkbox:hover { border-color: var(--accent-ring); color: var(--accent-ring); }
+        .task-checkbox.checked {
+            background: #10b981; border-color: #10b981; color: #fff;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+        .task-info { flex: 1; min-width: 0; }
+        .task-title-text {
+            font-size: 13.5px; font-weight: 600; color: var(--text-primary);
+            line-height: 1.4; word-break: break-word;
+        }
+        .task-title-text.done { text-decoration: line-through; color: var(--text-tertiary); }
+        .task-meta-row {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px;
+        }
+        .badge-priority {
+            font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+            padding: 2px 8px; border-radius: 12px;
+        }
+        .badge-high { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .badge-mid  { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-low  { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+
+        .due-badge {
+            font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 12px;
+            display: inline-flex; align-items: center; gap: 4px;
+            background: var(--glass-bg-subtle); border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+        }
+        .due-badge.overdue { background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.3); }
+        .due-badge.soon { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3); animation: pulseAlert 2s infinite; }
+
+        @keyframes pulseAlert {
+            0%, 100% { opacity: 1; } 50% { opacity: 0.6; }
+        }
+
+        .task-actions {
+            display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+        }
+        .action-icon-btn {
+            width: 32px; height: 32px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--glass-bg-subtle); border: 1px solid var(--glass-border);
+            color: var(--text-tertiary); font-size: 13px; text-decoration: none; cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+        .action-icon-btn:hover {
+            color: var(--text-primary); background: var(--glass-bg-hover); transform: scale(1.08);
+        }
+        .action-icon-btn.delete:hover {
+            color: #ef4444; border-color: rgba(239, 68, 68, 0.4);
+        }
+
+        /* EMPTY STATE */
+        .empty-tasks {
+            text-align: center; padding: 42px 20px;
+        }
+        .empty-icon { font-size: 38px; margin-bottom: 10px; opacity: 0.7; }
+        .empty-title { font-size: 15px; font-weight: 700; color: var(--text-secondary); }
+        .empty-desc { font-size: 12.5px; color: var(--text-tertiary); margin-top: 4px; }
+
+        /* NOTIFICATION BANNER */
+        .notif-card {
+            padding: 14px 18px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        }
+
+        /* TOAST CONTAINER */
+        #toast-container {
+            position: fixed; top: 20px; right: 20px; z-index: 99999;
+            display: flex; flex-direction: column; gap: 10px; max-width: 360px; width: 100%; pointer-events: none;
+        }
+        .toast-popup {
+            pointer-events: auto; background: var(--glass-bg); backdrop-filter: blur(28px);
+            border: 1px solid var(--glass-border); border-radius: var(--r-xl);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); padding: 14px 16px;
+            animation: toastIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        }
+        @keyframes toastIn {
+            from { transform: translateX(100%) scale(0.95); opacity: 0; }
+            to { transform: translateX(0) scale(1); opacity: 1; }
+        }
+
+        /* RESPONSIVE MEDIA QUERIES */
+        @media (max-width: 440px) {
+            .app-wrapper { padding: 20px 12px 80px; }
+            .hero-title { font-size: 22px; }
+            .widgets-grid { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
-<body class="bg-slate-50 min-h-screen py-12 px-4 font-sans">
+<body>
 
-    <div class="max-w-md mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        
-        <!-- Sarlavha -->
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-bold tracking-wide">📌 Mening Vazifalarim</h1>
-                <p class="text-blue-100 text-xs mt-1">Foydalanuvchi: <span class="font-semibold text-white">@{{ request.user.username }}</span></p>
-            </div>
-            <a href="{% url 'logout' %}" class="text-xs bg-white/20 hover:bg-white/30 text-white font-medium px-3 py-1.5 rounded-lg transition backdrop-blur-sm">
-                Chiqish 🚪
-            </a>
-        </div>
+    <!-- AMBIENT BACKGROUND GLOW & ORBS -->
+    <div class="ambient-bg">
+        <div class="ambient-orb orb-top-left"></div>
+        <div class="ambient-orb orb-mid-right"></div>
+        <div class="ambient-orb orb-bot-left"></div>
 
-        <div class="p-6">
-            <!-- Yangi vazifa qo'shish -->
-            <form action="{% url 'add_task' %}" method="POST" class="space-y-3 mb-6">
-                {% csrf_token %}
-                <div>
-                    <input type="text" name="title" placeholder="Yangi vazifa nomini yozing..." required 
-                           class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-                </div>
-                
-                <div class="flex gap-2">
-                    <select name="priority" class="flex-1 px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="Past">🟢 Past muhimlik</option>
-                        <option value="O'rta" selected>🟡 O'rta muhimlik</option>
-                        <option value="Yuqori">🔴 Yuqori muhimlik</option>
-                    </select>
-
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-xl transition text-sm shadow-sm">
-                        Qo'shish
-                    </button>
-                </div>
-            </form>
-
-            <hr class="border-slate-100 mb-6">
-
-            <!-- Vazifalar ro'yxati -->
-            <div class="space-y-3">
-                {% for task in tasks %}
-                <div class="p-4 rounded-xl border border-slate-100 transition {% if task.completed %}bg-slate-50 opacity-80{% else %}bg-white shadow-xs{% endif %}">
-                    
-                    <div class="flex items-start justify-between gap-3">
-                        <!-- Chap qism: Tick tugmasi va Matn -->
-                        <div class="flex items-start gap-3 overflow-hidden">
-                            <!-- Tick (Belgilash) tugmasi -->
-                            <a href="{% url 'toggle_task' task.id %}" class="mt-0.5 w-6 h-6 rounded-lg border flex items-center justify-center transition flex-shrink-0 {% if task.completed %}bg-emerald-500 border-emerald-500 text-white font-bold{% else %}border-slate-300 hover:border-blue-500{% endif %}">
-                                {% if task.completed %}✓{% endif %}
-                            </a>
-                            
-                            <div class="min-w-0">
-                                <!-- Vazifa nomi (Bajarilgan bo'lsa ustidan chiziladi) -->
-                                <p class="font-medium text-sm {% if task.completed %}line-through text-slate-400{% else %}text-slate-700{% endif %}">
-                                    {{ task.title }}
-                                </p>
-                                
-                                <!-- Muhimlik belgisi -->
-                                <span class="inline-block text-[11px] font-medium px-2 py-0.5 rounded-md mt-1
-                                    {% if task.priority == 'Yuqori' %}bg-red-50 text-red-600 border border-red-100
-                                    {% elif task.priority == 'O\'rta' %}bg-amber-50 text-amber-600 border border-amber-100
-                                    {% else %}bg-emerald-50 text-emerald-600 border border-emerald-100{% endif %}">
-                                    {{ task.priority }}
-                                </span>
-
-                                <!-- Tarix va vaqt ma'lumotlari -->
-                                <div class="text-[11px] text-slate-400 mt-2 space-y-0.5">
-                                    <p>📅 Yaratildi: {{ task.created_at|date:"d.m.Y H:i" }}</p>
-                                    {% if task.completed and task.completed_at %}
-                                    <p class="text-emerald-600 font-medium">✅ Bajarildi: {{ task.completed_at|date:"d.m.Y H:i" }}</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- O'ng qism: O'chirish tugmasi -->
-                        <a href="{% url 'delete_task' task.id %}" class="text-slate-300 hover:text-rose-600 p-1.5 rounded-lg transition hover:bg-rose-50 flex-shrink-0" title="O'chirish">
-                            🗑️
-                        </a>
-                    </div>
-                </div>
-                {% empty %}
-                <div class="text-center py-10">
-                    <p class="text-3xl mb-2">📋</p>
-                    <p class="text-slate-400 text-sm">Hozircha vazifalar yo'q.</p>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
+        <!-- BOTANICAL LEAF SILHOUETTE (Matches bottom corners of image) -->
+        <svg class="botanical-leaf botanical-left" viewBox="0 0 200 300" fill="currentColor" style="color: var(--leaf-color);">
+            <path d="M10,290 C50,240 80,180 90,100 C95,60 110,20 120,5 C118,30 110,70 100,120 C130,90 160,80 180,85 C160,110 130,130 95,145 C120,150 150,165 165,185 C140,195 110,185 88,175 C95,205 110,235 125,255 C100,250 85,230 80,205 C75,240 55,270 10,290 Z"/>
+        </svg>
+        <svg class="botanical-leaf botanical-right" viewBox="0 0 200 300" fill="currentColor" style="color: var(--leaf-color);">
+            <path d="M10,290 C50,240 80,180 90,100 C95,60 110,20 120,5 C118,30 110,70 100,120 C130,90 160,80 180,85 C160,110 130,130 95,145 C120,150 150,165 165,185 C140,195 110,185 88,175 C95,205 110,235 125,255 C100,250 85,230 80,205 C75,240 55,270 10,290 Z"/>
+        </svg>
     </div>
 
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container"></div>
+
+    <div class="app-wrapper">
+
+        <!-- TITLE -->
+        <div class="hero-banner">
+            <h1 class="hero-title">Todo app</h1>
+        </div>
+
+        <!-- PROMINENT THEME MODE SELECTOR (Light & Dark matching screenshot) -->
+        <div style="display:flex; justify-content:center; margin-bottom: 20px;">
+            <div class="theme-mode-segmented">
+                <button type="button" class="mode-tab" id="mode-tab-light" onclick="setThemeMode('light')">
+                    <span class="mode-icon">☀️</span>
+                    <span>Light Mode</span>
+                </button>
+                <button type="button" class="mode-tab active" id="mode-tab-dark" onclick="setThemeMode('dark')">
+                    <span class="mode-icon">🌙</span>
+                    <span>Dark Mode</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- TOP BAR: User info & Quick Actions -->
+        <header class="glass-card top-nav">
+            <div class="user-tag">
+                <span class="status-dot"></span>
+                <span>@{{ request.user.username }}</span>
+            </div>
+            <div class="nav-actions">
+                <button type="button" class="btn-icon-glass" id="theme-toggle-btn" onclick="toggleTheme()" title="Mavzuni almashtirish (Yorug'/Qorong'i)">
+                    <span id="theme-icon">☀️</span>
+                </button>
+                <a href="{% url 'logout' %}" class="btn-logout" title="Chiqish">
+                    <span>🚪</span> <span>Chiqish</span>
+                </a>
+            </div>
+        </header>
+
+
+
+        <!-- 2. MIDDLE ROW: TODAY'S PLAN & BATTERY / PROGRESS RING (Row 2 in screenshot) -->
+        <section class="widgets-grid">
+            <!-- TODAY'S PLAN CARD -->
+            <div class="glass-card plan-card">
+                <div class="plan-header">
+                    <span class="plan-title">Bugungi Reja</span>
+                    <button type="button" class="plan-add-btn" onclick="toggleTaskForm()" title="Yangi vazifa qo'shish">+</button>
+                </div>
+                <ul class="plan-list" id="quick-plan-list">
+                    {% for task in tasks|slice:":4" %}
+                    <li class="plan-item {% if task.completed %}done{% endif %}">
+                        <a href="{% url 'toggle_task' task.id %}" style="display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit;width:100%;overflow:hidden;text-overflow:ellipsis;" title="Holatini o'zgartirish">
+                            <span class="plan-bullet"></span>
+                            <span style="overflow:hidden;text-overflow:ellipsis;">{{ task.title }}</span>
+                        </a>
+                    </li>
+                    {% empty %}
+                    <li class="plan-empty">• Vazifalar yo'q. '+' tugmasini bosing</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- PROGRESS / COMPLETION RING (Matching "75% Battery" in screenshot) -->
+            <div class="glass-card progress-card">
+                <div class="circle-progress-wrap">
+                    <svg class="circle-progress-svg" viewBox="0 0 88 88">
+                        <circle class="circle-bg" cx="44" cy="44" r="36"></circle>
+                        <circle class="circle-bar" id="progress-circle-bar" cx="44" cy="44" r="36"></circle>
+                    </svg>
+                    <span class="progress-val" id="progress-percent-text">75%</span>
+                </div>
+                <span class="progress-label" id="progress-stat-label">Bajarildi</span>
+            </div>
+        </section>
+
+
+
+        <!-- 7. NEW TASK FORM (Collapsible or Drawer) -->
+        <section class="glass-card task-form-card" id="task-form-section">
+            <div class="form-title-row">
+                <span class="form-section-title">Yangi Vazifa Yaratish</span>
+                <button type="button" onclick="toggleTaskForm()" style="background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:16px;">✕</button>
+            </div>
+            <form action="{% url 'add_task' %}" method="POST" id="task-form">
+                {% csrf_token %}
+                <div class="form-field">
+                    <label class="form-label" for="task-title-input">Vazifa mazmuni</label>
+                    <input type="text" name="title" id="task-title-input" class="glass-input" placeholder="Masalan: Dizayn tayyorlash, Mashg'ulot..." required>
+                </div>
+
+                <div class="form-grid-2 form-field">
+                    <div>
+                        <label class="form-label">Muhimlik darajasi</label>
+                        <select name="priority" class="glass-input" style="cursor:pointer;">
+                            <option value="Past">🟢 Past</option>
+                            <option value="O'rta" selected>🟡 O'rta</option>
+                            <option value="Yuqori">🔴 Yuqori</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label" for="due-date-input">⏰ Bajarish muddati</label>
+                        <input type="datetime-local" name="due_date" id="due-date-input" class="glass-input">
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span class="form-label" style="margin-bottom:0;">Tezkor vaqt qo'shish</span>
+                        <button type="button" onclick="clearDueDate()" style="background:none; border:none; color:var(--text-tertiary); font-size:11px; cursor:pointer;">Tozalash ✕</button>
+                    </div>
+                    <div class="quick-chips">
+                        <button type="button" class="chip-btn" onclick="addMinutes(5)">+5 daq</button>
+                        <button type="button" class="chip-btn" onclick="addMinutes(15)">+15 daq</button>
+                        <button type="button" class="chip-btn" onclick="addMinutes(60)">+1 soat</button>
+                        <button type="button" class="chip-btn" onclick="setTodayEvening()">Bugun 18:00</button>
+                        <button type="button" class="chip-btn" onclick="setTomorrowMorning()">Ertaga 09:00</button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit-task">
+                    <span style="font-size:18px;">+</span>
+                    <span>Vazifani Saqlash</span>
+                </button>
+            </form>
+        </section>
+
+        <!-- SEARCH BAR -->
+        <div class="search-wrap">
+            <svg class="search-icon-svg" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="task-search-input" class="search-input" placeholder="Search... (Vazifalardan qidirish)" oninput="handleTaskSearch(this.value)">
+        </div>
+
+        <!-- 8. FILTER TABS & TASK LIST -->
+        <div class="glass-card filter-row">
+            <button class="filter-tab active" id="tab-all" onclick="filterTasks('all')">Barchasi ({{ tasks|length }})</button>
+            <button class="filter-tab" id="tab-pending" onclick="filterTasks('pending')">Faol</button>
+            <button class="filter-tab" id="tab-timed" onclick="filterTasks('timed')">⏰ Vaqtli</button>
+            <button class="filter-tab" id="tab-completed" onclick="filterTasks('completed')">✓ Bajarilgan</button>
+        </div>
+
+        <!-- TASKS LIST -->
+        <div id="tasks-list">
+            {% for task in tasks %}
+            <div class="glass-card task-card {% if task.completed %}completed{% endif %}"
+                 data-id="{{ task.id }}"
+                 data-completed="{{ task.completed|yesno:'true,false' }}"
+                 data-has-due="{% if task.due_date %}true{% else %}false{% endif %}"
+                 data-due-timestamp="{% if task.due_date %}{{ task.due_date|date:'U' }}{% endif %}"
+                 id="task-element-{{ task.id }}">
+
+                <div class="task-main">
+                    <a href="{% url 'toggle_task' task.id %}"
+                       class="task-checkbox {% if task.completed %}checked{% endif %}"
+                       title="Bajarilgan deb belgilash">✓</a>
+                    <div class="task-info">
+                        <div class="task-title-text {% if task.completed %}done{% endif %}">{{ task.title }}</div>
+                        <div class="task-meta-row">
+                            <span class="badge-priority {% if task.priority == 'Yuqori' %}badge-high{% elif task.priority == "O'rta" %}badge-mid{% else %}badge-low{% endif %}">
+                                {{ task.priority }}
+                            </span>
+                            {% if task.due_date %}
+                            <span id="due-badge-{{ task.id }}" class="due-badge"
+                                  data-due-epoch="{{ task.due_date|date:'U' }}"
+                                  data-completed="{{ task.completed|yesno:'true,false' }}">
+                                <span>⏰</span>
+                                <span>{{ task.due_date|date:"d.m H:i" }}</span>
+                                <span id="countdown-{{ task.id }}" style="font-weight:700;margin-left:2px;"></span>
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="task-actions">
+                    {% if task.due_date and not task.completed %}
+                    <button type="button" class="action-icon-btn"
+                            data-task-id="{{ task.id }}" data-minutes="15"
+                            onclick="handleSnoozeClick(this)" title="+15 daqiqa surish">⏱</button>
+                    {% endif %}
+                    <a href="{% url 'delete_task' task.id %}"
+                       onclick="return confirm('Vazifani o\'chirmoqchimisiz?');"
+                       class="action-icon-btn delete" title="O'chirish">🗑</a>
+                </div>
+
+            </div>
+            {% empty %}
+            <div class="glass-card empty-tasks">
+                <div class="empty-icon">✦</div>
+                <div class="empty-title">Hozircha vazifalar yo'q</div>
+                <div class="empty-desc">Bugungi rejalaringizni qo'shish uchun yuqoridagi '+' tugmasini bosing</div>
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+
+    {{ tasks_data|json_script:"scheduled-tasks-data" }}
+    <script src="{% static 'todo/js/app.js' %}"></script>
+    <script>
+        // ==========================================
+        // MINIMAL GLASSMORPHISM UI SCRIPTS
+        // ==========================================
+
+        // 1. THEME SWITCHER (Light Mode <-> Dark Mode)
+        function initTheme() {
+            const savedTheme = localStorage.getItem('todo_theme') || 'dark';
+            setThemeMode(savedTheme);
+        }
+
+        function setThemeMode(mode) {
+            document.documentElement.setAttribute('data-theme', mode);
+            localStorage.setItem('todo_theme', mode);
+
+            // Update segmented switch tabs
+            const lightTab = document.getElementById('mode-tab-light');
+            const darkTab = document.getElementById('mode-tab-dark');
+            if (lightTab && darkTab) {
+                if (mode === 'light') {
+                    lightTab.classList.add('active');
+                    darkTab.classList.remove('active');
+                } else {
+                    darkTab.classList.add('active');
+                    lightTab.classList.remove('active');
+                }
+            }
+
+            // Update top bar icon
+            const iconEl = document.getElementById('theme-icon');
+            if (iconEl) {
+                iconEl.textContent = mode === 'dark' ? '☀️' : '🌙';
+            }
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') || 'dark';
+            const next = current === 'dark' ? 'light' : 'dark';
+            setThemeMode(next);
+        }
+
+        // 2. PROGRESS RING CALCULATION
+        function updateProgressMeter() {
+            const allTasks = document.querySelectorAll('.task-card');
+            const total = allTasks.length;
+            if (total === 0) {
+                document.getElementById('progress-percent-text').textContent = '100%';
+                document.getElementById('progress-stat-label').textContent = 'Bo\'sh';
+                const circleBar = document.getElementById('progress-circle-bar');
+                if (circleBar) circleBar.style.strokeDashoffset = '0';
+                return;
+            }
+
+            let completedCount = 0;
+            allTasks.forEach(card => {
+                if (card.dataset.completed === 'true') {
+                    completedCount++;
+                }
+            });
+
+            const percent = Math.round((completedCount / total) * 100);
+            document.getElementById('progress-percent-text').textContent = percent + '%';
+            document.getElementById('progress-stat-label').textContent = `${completedCount}/${total} Bajarildi`;
+
+            const circumference = 226;
+            const offset = circumference - (percent / 100) * circumference;
+            const circleBar = document.getElementById('progress-circle-bar');
+            if (circleBar) {
+                circleBar.style.strokeDashoffset = offset;
+            }
+        }
+
+        // 3. TASK SEARCH FILTER
+        function handleTaskSearch(query) {
+            const q = query.toLowerCase().trim();
+            document.querySelectorAll('.task-card').forEach(card => {
+                const title = card.querySelector('.task-title-text').textContent.toLowerCase();
+                if (!q || title.includes(q)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // 4. TOGGLE NEW TASK FORM
+        function toggleTaskForm() {
+            const formCard = document.getElementById('task-form-section');
+            if (formCard) {
+                formCard.classList.toggle('open');
+                if (formCard.classList.contains('open')) {
+                    formCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    document.getElementById('task-title-input').focus();
+                }
+            }
+        }
+
+        // INITIALIZE ALL
+        window.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            updateProgressMeter();
+        });
+
+        // OVERRIDE filterTasks FOR SMOOTH TABS
+        function filterTasks(type) {
+            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+            const activeTab = document.getElementById('tab-' + type);
+            if (activeTab) activeTab.classList.add('active');
+
+            document.querySelectorAll('.task-card').forEach(card => {
+                const completed = card.dataset.completed === 'true';
+                const hasDue = card.dataset.hasDue === 'true';
+                let show = false;
+                if (type === 'all') show = true;
+                if (type === 'pending') show = !completed;
+                if (type === 'timed') show = !completed && hasDue;
+                if (type === 'completed') show = completed;
+                card.style.display = show ? '' : 'none';
+            });
+        }
+    </script>
 </body>
 </html>
